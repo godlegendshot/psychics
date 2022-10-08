@@ -7,6 +7,7 @@ import net.kyori.adventure.text.Component.text
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
+import org.bukkit.Particle
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.player.PlayerVelocityEvent
 
@@ -31,6 +32,10 @@ class  AbilityInvincible : Ability<AbilityConceptInvincible>() ,Listener {
     fun onEntityDamage(event: EntityDamageEvent) {
         val damage = event.damage * 0
         event.damage = damage
+        val player = esper.player
+        val location = player.location
+        val world = location.world
+        world.spawnParticle(Particle.TOTEM, location, 5, 0.0, 0.0, 0.0, 0.0, null, true)
     }
 
     @EventHandler(ignoreCancelled = true)
