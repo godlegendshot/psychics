@@ -33,9 +33,10 @@ class  AbilityInvincible : Ability<AbilityConceptInvincible>() ,Listener {
         val damage = event.damage * 0
         event.damage = damage
         val player = esper.player
-        val location = player.location
+        val location = player.location.apply { y += 1.8 }
         val world = location.world
-        world.spawnParticle(Particle.TOTEM, location, 5, 0.0, 0.0, 0.0, 0.0, null, true)
+        world.spawnParticle(Particle.TOTEM, location, 20, 1.0, 0.0, 1.0, 0.0, null, true)
+
     }
 
     @EventHandler(ignoreCancelled = true)
