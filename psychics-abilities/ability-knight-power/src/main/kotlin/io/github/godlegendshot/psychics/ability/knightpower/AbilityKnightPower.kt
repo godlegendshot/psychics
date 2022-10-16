@@ -6,12 +6,12 @@ import io.github.monun.psychics.AbilityType
 import io.github.monun.tap.config.Config
 import io.github.monun.tap.config.Name
 import net.kyori.adventure.text.Component.text
-import org.bukkit.potion.PotionEffect
-import org.bukkit.potion.PotionEffectType
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.PlayerDeathEvent
+import org.bukkit.potion.PotionEffect
+import org.bukkit.potion.PotionEffectType
 
 
 //

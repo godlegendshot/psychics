@@ -5,9 +5,9 @@ import io.github.monun.psychics.AbilityConcept
 import io.github.monun.tap.config.Name
 import net.kyori.adventure.text.Component.text
 import net.kyori.adventure.text.format.NamedTextColor
+import org.bukkit.Particle
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
-import org.bukkit.Particle
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.player.PlayerVelocityEvent
 
