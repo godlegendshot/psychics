@@ -92,6 +92,7 @@ class AbilityReviveAttack : ActiveAbility<AbilityConceptReviveAttack>(), Listene
                 true,
                 true
             )
+            durationTime = 0L
             player.addPotionEffect(potion1)
             player.addPotionEffect(potion2)
             player.addPotionEffect(potion3)
