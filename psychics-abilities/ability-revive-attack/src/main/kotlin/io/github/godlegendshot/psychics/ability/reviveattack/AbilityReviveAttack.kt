@@ -3,10 +3,13 @@ package io.github.godlegendshot.psychics.ability.reviveattack
 import io.github.monun.psychics.AbilityConcept
 import io.github.monun.psychics.AbilityType
 import io.github.monun.psychics.ActiveAbility
+import io.github.monun.psychics.attribute.EsperStatistic
+import io.github.monun.psychics.tooltip.TooltipBuilder
 import io.github.monun.tap.config.Config
 import io.github.monun.tap.config.Name
 import net.kyori.adventure.text.Component.text
 import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Material
 import org.bukkit.Sound
 import org.bukkit.event.EventHandler
@@ -25,13 +28,13 @@ class AbilityConceptReviveAttack : AbilityConcept() {
     var timer = 60000L
 
     @Config
-    var strengthAmplifier = 5
+    var strengthAmplifier = 10
 
     @Config
-    var speedAmplifier = 2
+    var speedAmplifier = 4
 
     @Config
-    var regenerationAmplifier = 4
+    var witherAmplifier = 4
 
     init {
         type = AbilityType.ACTIVE
@@ -39,13 +42,111 @@ class AbilityConceptReviveAttack : AbilityConcept() {
         wand = ItemStack(Material.STICK)
         cost = 40.0
         durationTime = 10000L
-        cooldownTime = 85000L
+        cooldownTime = 95000L
         description = listOf(
             text("복수하고 싶다는 일념으로"),
             text("일시적으로 부활할 수 있습니다."),
-            text("상대에게 복수를 선사하세요!")
+            text("상대에게 복수를 선사하세요!"),
+            text("※주의※ 해당 능력은 시전 중 데미지를 입습니다.").color(NamedTextColor.RED)
         )
     }
+
+    override fun onRenderTooltip(tooltip: TooltipBuilder, stats: (EsperStatistic) -> Double) {
+        tooltip.header(
+            text(
+                "부활 후 버프 지속 시간 "
+            ).color(
+                NamedTextColor.AQUA
+            ).decoration(
+                TextDecoration.ITALIC, false
+            ).decoration(
+                TextDecoration.BOLD, true
+            ).append(
+                text(
+                    (
+                        timer/10L
+                            ).toInt().toString()).decoration(
+                    TextDecoration.BOLD, false
+                ).color(
+                    NamedTextColor.WHITE
+                )
+            ).append(
+                text().content(
+                    "초"
+                ).decoration(
+                    TextDecoration.BOLD, false
+                ).color(
+                    NamedTextColor.WHITE
+                )
+            )
+        )
+        tooltip.header(
+            text(
+                "부활 시 힘 "
+            ).color(
+                NamedTextColor.DARK_RED
+            ).decoration(
+                TextDecoration.ITALIC, false
+            ).decoration(
+                TextDecoration.BOLD, true
+            ).append(
+                text(
+                    (
+                        strengthAmplifier + 1
+                            ).toString()
+                ).decoration(
+                    TextDecoration.BOLD, false
+                ).color(
+                    NamedTextColor.WHITE
+                )
+            )
+        )
+
+        tooltip.header(
+            text(
+                "부활 시 위더 "
+            ).color(
+                NamedTextColor.BLACK
+            ).decoration(
+                TextDecoration.ITALIC, false
+            ).decoration(
+                TextDecoration.BOLD, true
+            ).append(
+                text(
+                        (
+                            witherAmplifier + 1
+                                ).toString()
+                ).decoration(
+                    TextDecoration.BOLD, false
+                ).color(
+                    NamedTextColor.WHITE
+                )
+            )
+        )
+
+        tooltip.header(
+            text(
+                "부활 시 신속 "
+            ).color(
+                NamedTextColor.WHITE
+            ).decoration(
+                TextDecoration.ITALIC, false
+            ).decoration(
+                TextDecoration.BOLD, true
+            ).append(
+                text(
+                    (
+                        speedAmplifier + 1
+                            ).toString()
+                ).decoration(
+                    TextDecoration.BOLD, false
+                ).color(
+                    NamedTextColor.WHITE
+                )
+            )
+        )
+    }
+
 }
 
 class AbilityReviveAttack : ActiveAbility<AbilityConceptReviveAttack>(), Listener {
@@ -85,9 +186,9 @@ class AbilityReviveAttack : ActiveAbility<AbilityConceptReviveAttack>(), Listene
                 true
             )
             val potion3 = PotionEffect(
-                PotionEffectType.REGENERATION,
-                ticks,
-                concept.regenerationAmplifier,
+                PotionEffectType.WITHER,
+                2147483647,
+                concept.witherAmplifier,
                 true,
                 true,
                 true
