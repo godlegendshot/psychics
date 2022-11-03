@@ -64,7 +64,7 @@ class AbilityConceptReviveAttack : AbilityConcept() {
             ).append(
                 text(
                     (
-                        timer/10L
+                        timer/100L
                             ).toInt().toString()).decoration(
                     TextDecoration.BOLD, false
                 ).color(
