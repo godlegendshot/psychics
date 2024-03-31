@@ -11,6 +11,8 @@ import org.bukkit.event.Listener
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.player.PlayerVelocityEvent
 
+
+
 //project-invincible
 @Name("invincible")
 class AbilityConceptInvincible : AbilityConcept() {
@@ -27,16 +29,15 @@ class  AbilityInvincible : Ability<AbilityConceptInvincible>() ,Listener {
     override fun onEnable() {
         psychic.registerEvents(this)
     }
-
     @EventHandler(ignoreCancelled = true)
     fun onEntityDamage(event: EntityDamageEvent) {
-        val damage = event.damage * 0
+        val damage = 0.0
         event.damage = damage
         val player = esper.player
         val location = player.location.apply { y += 1.8 }
         val world = location.world
-        world.spawnParticle(Particle.TOTEM, location, 20, 1.0, 0.0, 1.0, 0.0, null, true)
-
+        world.spawnParticle(Particle.TOTEM, location, 20, 0.5, 0.0, 0.5, 0.0, null, true)
+        world.spawnParticle(Particle.FIREWORKS_SPARK, location, 20, 0.5,0.0,0.5,0.0, null, true)
     }
 
     @EventHandler(ignoreCancelled = true)

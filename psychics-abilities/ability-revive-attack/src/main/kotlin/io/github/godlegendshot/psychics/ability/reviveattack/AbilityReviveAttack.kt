@@ -5,30 +5,39 @@ import io.github.monun.psychics.AbilityType
 import io.github.monun.psychics.ActiveAbility
 import io.github.monun.psychics.attribute.EsperStatistic
 import io.github.monun.psychics.tooltip.TooltipBuilder
+import io.github.monun.psychics.util.Times
 import io.github.monun.tap.config.Config
 import io.github.monun.tap.config.Name
+import io.github.monun.tap.event.EntityProvider
+import io.github.monun.tap.event.TargetEntity
 import net.kyori.adventure.text.Component.text
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Material
+import org.bukkit.Particle
 import org.bukkit.Sound
+import org.bukkit.entity.Entity
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
+import org.bukkit.event.entity.EntityDamageByEntityEvent
+import org.bukkit.event.entity.EntityDamageEvent
+import org.bukkit.event.entity.EntityDeathEvent
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.player.PlayerEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
+import kotlin.math.max
 
 //부활 시 강인한 사신의 힘으로 초월적으로 공격합니다
 @Name("revive-attack")
 class AbilityConceptReviveAttack : AbilityConcept() {
 
     @Config
-    var timer = 60000L
+    var timer :Long = 60000L
 
     @Config
-    var strengthAmplifier = 10
+    var killfeverTime : Long = 10000L
 
     @Config
     var speedAmplifier = 4
@@ -47,7 +56,8 @@ class AbilityConceptReviveAttack : AbilityConcept() {
             text("복수하고 싶다는 일념으로"),
             text("일시적으로 부활할 수 있습니다."),
             text("상대에게 복수를 선사하세요!"),
-            text("※주의※ 해당 능력은 시전 중 데미지를 입습니다.").color(NamedTextColor.RED)
+            text("※주의※ 해당 능력은 부활 후 데미지를 입습니다.").color(NamedTextColor.RED),
+            text("몹을 죽일 때 마다 체력이 회복됩니다.").color(NamedTextColor.YELLOW)
         )
     }
 
@@ -64,7 +74,7 @@ class AbilityConceptReviveAttack : AbilityConcept() {
             ).append(
                 text(
                     (
-                        timer/100L
+                        timer/1000L
                             ).toInt().toString()).decoration(
                     TextDecoration.BOLD, false
                 ).color(
@@ -82,23 +92,13 @@ class AbilityConceptReviveAttack : AbilityConcept() {
         )
         tooltip.header(
             text(
-                "부활 시 힘 "
+                "부활 시 킬당 배율 상승이 상승합니다."
             ).color(
                 NamedTextColor.DARK_RED
             ).decoration(
                 TextDecoration.ITALIC, false
             ).decoration(
                 TextDecoration.BOLD, true
-            ).append(
-                text(
-                    (
-                        strengthAmplifier + 1
-                            ).toString()
-                ).decoration(
-                    TextDecoration.BOLD, false
-                ).color(
-                    NamedTextColor.WHITE
-                )
             )
         )
 
@@ -150,8 +150,39 @@ class AbilityConceptReviveAttack : AbilityConcept() {
 }
 
 class AbilityReviveAttack : ActiveAbility<AbilityConceptReviveAttack>(), Listener {
+    /**스킬 발동 후 죽을 시 발동되는 지속시간*/
+    private var durationTime2: Long = 0L
+        get() {
+            return max(0L, field - Times.current)
+        }
+        set(value) {
+            checkState()
+
+            val times = max(0L, value)
+            field = Times.current + times
+        }
+    /**부활 후 적을 죽일 시 생기는 보너스 타임*/
+    private var feverTime: Long = 0L
+        get() {
+            return max(0L, field - Times.current)
+        }
+        set(value) {
+            checkState()
+
+            val times = max(0L, value)
+            field = Times.current + times
+        }
+
+    private var killpoint = 0
+
     override fun onEnable() {
         psychic.registerEvents(this)
+        psychic.runTaskTimer({
+            if (durationTime2 > 0L){
+                esper.player.sendActionBar(text("원래 대로까지 ${(durationTime2 / 1000L).toInt()}초...").color(NamedTextColor.DARK_RED)
+                    .append(text("현재 ${(killpoint +2)}배 적용 중!").color(NamedTextColor.GREEN)
+                        .append(text("피버 타임 끝까지 ${(feverTime / 1000L).toInt()}초...!").color(NamedTextColor.BLUE))))
+                }},0L,0L)
     }
 
     override fun onCast(event: PlayerEvent, action: WandAction, target: Any?){
@@ -163,43 +194,87 @@ class AbilityReviveAttack : ActiveAbility<AbilityConceptReviveAttack>(), Listene
         cooldownTime = concept.cooldownTime
     }
 
-    @EventHandler(ignoreCancelled = true)
+
+    @EventHandler
     fun onPlayerDeath(event: PlayerDeathEvent) {
-        val ticks = (concept.timer / 50L).toInt()
+        val ticks = (concept.timer/50L).toInt()
         val player = esper.player
         val location = player.location
         if (durationTime > 0L) {
-            event.isCancelled = true
-            val potion1 = PotionEffect (
-                PotionEffectType.INCREASE_DAMAGE,
-                ticks,
-                concept.strengthAmplifier,
-                true,
-                true,
-                true
-            )
-            val potion2 = PotionEffect (
+            event.isCancelled = true //죽음 무효
+            durationTime2 = concept.timer //2차 지속 시간 설정
+            durationTime = 0L //지속시간 초기화
+            player.addPotionEffect(PotionEffect(
                 PotionEffectType.SPEED,
-                ticks, concept.speedAmplifier,
+                ticks,
+                concept.speedAmplifier,
                 true,
                 true,
                 true
+                )
             )
-            val potion3 = PotionEffect(
+            player.addPotionEffect(PotionEffect(
                 PotionEffectType.WITHER,
-                2147483647,
+                ticks,
                 concept.witherAmplifier,
                 true,
                 true,
                 true
+                )
             )
-            durationTime = 0L
-            player.addPotionEffect(potion1)
-            player.addPotionEffect(potion2)
-            player.addPotionEffect(potion3)
-            player.sendActionBar(text("내 모든것을 불태우겠다!!").color(NamedTextColor.RED))
+            player.sendActionBar(text("중요한 것은 어떻게 끝으로 가는가다!!!").color(NamedTextColor.RED))
             player.playSound(location,Sound.ENTITY_ENDER_DRAGON_GROWL,1.0F,1.0F)
         }
+        else{
+            durationTime2 = 0L
+        }
 
+    }
+    @EventHandler
+    fun onReviveDamage(event: EntityDamageEvent) {
+        if(durationTime2 > 0L){ //2차지속 시간내에 데미지를 입을 때 마다 이펙트 발현
+            val player = esper.player
+            val location = player.location.apply { y += 1.8 }
+            val world = location.world
+            world.spawnParticle(Particle.SMOKE_NORMAL, location, 20, 0.5, 0.0, 0.5, 0.0, null, true)
+
+        }
+    }
+    @EventHandler(ignoreCancelled = true)
+    @TargetEntity(EntityProvider.EntityDamageByEntity.Damager::class)
+    fun onAttack(event: EntityDamageByEntityEvent) {
+        if (durationTime2 > 0L){
+            if (feverTime == 0L) {
+            event.damage *= 2 // 기본 데미지 2배
+            }else{
+            event.damage *= (killpoint + 2) // 죽일 때 마다 데미지 배율 증가
+            }
+        }
+    }
+    @EventHandler
+    @TargetEntity(KillerProvider::class)
+    fun onPlayerKill(event: EntityDeathEvent){
+        val player = esper.player
+        val location = player.location.apply { y += 1.8 }
+        val world = location.world
+        val potion4 = PotionEffect(PotionEffectType.REGENERATION, 10, 255, true, true, true)
+        if (durationTime2 > 0L){
+            feverTime = concept.killfeverTime
+            killpoint += 1
+            player.playSound(location, Sound.ENTITY_ENDER_DRAGON_GROWL,1.0F,0.5F)
+            player.addPotionEffect(potion4)
+            world.spawnParticle(Particle.TOTEM, location, 20, 0.5, 0.0, 0.5, 0.0, null, true)
+            world.spawnParticle(Particle.COMPOSTER, location, 20, 0.5,0.0,0.5,0.0, null, true)
+        }
+        if (feverTime == 0L){
+                killpoint = 0
+        }
+    }
+}
+
+
+class KillerProvider : EntityProvider<EntityDeathEvent> {
+    override fun getFrom(event: EntityDeathEvent): Entity? {
+        return event.entity.killer
     }
 }
